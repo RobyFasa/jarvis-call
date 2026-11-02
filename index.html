@@ -1,64 +1,35 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jarvis — prova chiamata</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 24px 16px; background: #0b1220; color: #e6edf7; }
-  button { font-size: 18px; padding: 14px 20px; border-radius: 12px; border: 0; margin: 8px 8px 8px 0; background: #2f6fed; color: #fff; }
-  button.stop { background: #b33; }
-  pre { white-space: pre-wrap; font-size: 13px; background: #111a2e; padding: 12px; border-radius: 8px; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <title>Parla con Jarvis</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-<h2>Prova chiamata con Jarvis</h2>
-<p>Premi Avvia, consenti il microfono e prova a parlare. Poi premi Chiudi.</p>
-<button id="start">Avvia</button><button id="stop" class="stop">Chiudi</button>
-<pre id="log"></pre>
-<script>
-const log = (m) => { document.getElementById("log").textContent += m + "\n"; };
-const tg = window.Telegram && window.Telegram.WebApp;
-const query = new URLSearchParams(location.search);
-const hash = new URLSearchParams(location.hash.slice(1));
-const key = query.get("k");
-const report = { platform: tg ? tg.platform : "no-telegram", version: tg ? tg.version : "", hashMarker: hash.get("m") === "1", key: !!key, mic: false, rtc: false, audioIn: false, secs: 0 };
-let pc, started = 0;
-if (tg) { tg.ready(); tg.expand(); }
-log(`Telegram ${report.platform} ${report.version}; chiave: ${report.key}; hash conservato: ${report.hashMarker}`);
-
-document.getElementById("start").onclick = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    report.mic = true; log("Microfono: OK");
-    const ctx = new AudioContext(); const src = ctx.createMediaStreamSource(stream); const an = ctx.createAnalyser(); src.connect(an);
-    const buf = new Uint8Array(an.fftSize);
-    setInterval(() => { an.getByteTimeDomainData(buf); if (buf.some((v) => Math.abs(v - 128) > 20)) report.audioIn = true; }, 200);
-    pc = new RTCPeerConnection();
-    const audio = document.createElement("audio"); audio.autoplay = true; audio.playsInline = true; document.body.appendChild(audio);
-    pc.ontrack = (e) => { audio.srcObject = e.streams[0]; log("Audio di Jarvis: collegato"); };
-    pc.addTrack(stream.getTracks()[0]);
-    const dc = pc.createDataChannel("oai-events");
-    dc.onopen = () => {
-      log("Canale dati: aperto");
-      dc.send(JSON.stringify({ type: "response.create", response: { instructions: "Saluta in italiano in una frase e chiedi se la si sente bene." } }));
-    };
-    dc.onmessage = (e) => { const ev = JSON.parse(e.data); if (ev.type === "error") log("Errore: " + JSON.stringify(ev.error)); };
-    const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
-    const r = await fetch("https://api.openai.com/v1/realtime/calls", { method: "POST", body: offer.sdp, headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/sdp" } });
-    if (!r.ok) { log("OpenAI: HTTP " + r.status + " " + (await r.text()).slice(0, 300)); return; }
-    await pc.setRemoteDescription({ type: "answer", sdp: await r.text() });
-    report.rtc = true; started = Date.now(); log("Chiamata: connessa. Parli pure.");
-  } catch (err) { log("Errore: " + err.name + " " + err.message); report.error = err.name; }
-};
-
-document.getElementById("stop").onclick = () => {
-  if (pc) pc.close();
-  report.secs = started ? Math.round((Date.now() - started) / 1000) : 0;
-  log("Esito: " + JSON.stringify(report));
-  if (tg && tg.sendData) { try { tg.sendData(JSON.stringify({ kind: "call-test", ...report })); } catch (e) { log("sendData: " + e.message); } }
-};
-</script>
+  <main>
+    <h1>Parla con Jarvis</h1>
+    <p id="hint">Quando vuole, inizi la chiamata e consenta l’uso del microfono.</p>
+    <div id="orb" aria-hidden="true">Jarvis</div>
+    <p id="status" role="status" aria-live="polite">Pronto a collegarsi</p>
+    <p id="timer" role="timer" aria-label="Durata della chiamata">00:00</p>
+    <button id="start" class="primary" type="button">Inizia</button>
+    <button id="enable-audio" type="button" hidden>Attiva l’audio</button>
+    <div id="controls" class="controls" hidden>
+      <button id="mute" type="button" aria-pressed="false">Disattiva microfono</button>
+      <button id="close" class="danger" type="button">Chiudi</button>
+    </div>
+    <p id="note">Le azioni richieste saranno eseguite in chat dopo la chiamata.</p>
+    <section id="result" hidden aria-labelledby="result-title">
+      <h2 id="result-title">Richieste annotate</h2>
+      <p id="result-hint"></p>
+      <ul id="requests"></ul>
+    </section>
+    <audio id="remote-audio" autoplay playsinline></audio>
+  </main>
 </body>
 </html>

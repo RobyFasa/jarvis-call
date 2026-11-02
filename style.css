@@ -1,0 +1,69 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #e6edf7;
+  background: #0b1220;
+  accent-color: #83b4ff;
+  --level: 0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 280px; }
+main {
+  width: min(100%, 480px);
+  min-height: 100svh;
+  margin-inline: auto;
+  padding: max(32px, env(safe-area-inset-top)) 24px max(28px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+h1 { margin: 0 0 12px; font-size: 1.6rem; font-weight: 600; text-wrap: balance; }
+p { line-height: 1.55; }
+#hint { margin: 0; max-width: 34ch; color: #b8c9e3; }
+#orb {
+  flex-shrink: 0;
+  width: clamp(132px, 35vw, 180px);
+  aspect-ratio: 1;
+  margin: clamp(36px, 8svh, 64px) 0 28px;
+  border-radius: 50%;
+  border: 2px solid #83b4ff;
+  background: #14243b;
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  font-weight: 500;
+  transform: scale(calc(1 + var(--level) * .12));
+}
+#status { margin: 0; font-size: 1.1rem; }
+#timer { margin: 8px 0 28px; font-size: 1.4rem; font-variant-numeric: tabular-nums; color: #b8c9e3; }
+button {
+  min-height: 52px;
+  padding: 14px 20px;
+  border: 1px solid #415776;
+  border-radius: 12px;
+  background: #1d2e47;
+  color: #e6edf7;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.primary { width: 100%; background: #2f6fed; border-color: #2f6fed; color: #fff; font-size: 1.2rem; }
+.danger { background: #a42f39; border-color: #ce4b57; color: #fff; }
+button:disabled { opacity: .55; cursor: default; }
+button:focus-visible { outline: 3px solid #b6d4ff; outline-offset: 4px; }
+button[aria-pressed="true"] { background: #e6edf7; color: #0b1220; }
+.controls { display: flex; width: 100%; gap: 12px; }
+.controls button:first-child { flex: 1; }
+#enable-audio { margin-bottom: 16px; }
+#note { margin: 24px 0 0; font-size: .875rem; color: #b8c9e3; max-width: 36ch; }
+#result { width: 100%; margin-top: 28px; text-align: left; overflow-wrap: anywhere; }
+#result h2 { font-size: 1.1rem; }
+#requests { padding-left: 24px; }
+#requests li { margin-bottom: 12px; line-height: 1.5; white-space: pre-wrap; }
+[hidden] { display: none !important; }
+::selection { background: #83b4ff; color: #0b1220; }
+@media (hover: hover) { button:not(:disabled):hover { filter: brightness(1.15); } }
+@media (max-width: 340px) { main { padding-inline: 16px; } .controls { flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { #orb { transform: none; } }
